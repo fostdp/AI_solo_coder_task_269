@@ -1,0 +1,17 @@
+{
+  "name": "solar-system-explorer",
+  "version": "1.0.0",
+  "description": "太阳系探索者网页小游戏",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "keywords": ["game", "solar-system", "physics"],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>轨道物理计算测试套件</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a1a;
+            color: #e0e0ff;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #00ffff;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #00ffff;
+            padding-bottom: 15px;
+        }
+        
+        .test-suite {
+            background: #151530;
+            border: 1px solid #333366;
+            border-radius: 8px;
+            margin: 20px 0;
+            padding: 20px;
+        }
+        
+        .test-suite h2 {
+            color: #ffcc00;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .test-case {
+            background: #1a1a3a;
+            border-left: 4px solid #444488;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            transition: all 0.3s;
+        }
+        
+        .test-case.passed {
+            border-left-color: #00ff88;
+            background: #1a3a2a;
+        }
+        
+        .test-case.failed {
+            border-left-color: #ff4444;
+            background: #3a1a1a;
+        }
+        
+        .test-name {
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+        
+        .test-description {
+            color: #aaaaaa;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        
+        .test-result {
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 3px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        
+        .test-result.passed {
+            background: #00ff8833;
+            color: #00ff88;
+        }
+        
+        .test-result.failed {
+            background: #ff444433;
+            color: #ff4444;
+        }
+        
+        .test-details {
+            background: #0a0a1a;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .test-details pre {
+            margin: 5px 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .value {
+            color: #00ccff;
+        }
+        
+        .expected {
+            color: #ffaa00;
+        }
+        
+        .actual {
+            color: #ff6666;
+        }
+        
+        .success {
+            color: #00ff88;
+        }
+        
+        .summary {
+            background: linear-gradient(135deg, #1a3a5a, #0a2a4a);
+            border: 2px solid #00ffff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .summary-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 15px 0;
+        }
+        
+        .stat {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .stat.passed { color: #00ff88; }
+        .stat.failed { color: #ff4444; }
+        .stat.total { color: #00ffff; }
+        
+        button {
+            background: linear-gradient(180deg, #1a4a6e, #0d2840);
+            border: 2px solid #00ffff;
+            color: #fff;
+            padding: 12px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: linear-gradient(180deg, #2a6a9e, #1d4860);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+        }
+        
+        .button-group {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .formula-box {
+            background: #0a1a2a;
+            border: 1px solid #00ffff44;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+        }
+        
+        .formula-title {
+            color: #ffcc00;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .visualization {
+            background: #0a0a2a;
+            border: 1px solid #3366aa;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #333366;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #00ffff);
+            transition: width 0.5s;
+        }
+        
+        .nav-links {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .nav-links a {
+            color: #00ffff;
+            text-decoration: none;
+            margin: 0 15px;
+        }
+        
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 轨道物理计算测试套件</h1>
+        
+        <div class="nav-links">
+            <a href="index.html">返回游戏</a>
+        </div>
+        
+        <div class="summary">
+            <h2>测试摘要</h2>
+            <div class="summary-stats">
+                <div class="stat total">总计: <span id="totalTests">0</span></div>
+                <div class="stat passed">✅ 通过: <span id="passedTests">0</span></div>
+                <div class="stat failed">❌ 失败: <span id="failedTests">0</span></div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar" style="width: 0%"></div>
+            </div>
+            <div class="button-group">
+                <button onclick="runAllTests()">▶ 运行所有测试</button>
+                <button onclick="resetTests()">🔄 重置测试</button>
+            </div>
+        </div>
+        
+        <div class="test-suite" id="hohmannSuite">
+            <h2>🛰️ 霍曼转移轨道测试</h2>
+            <div class="formula-box">
+                <div class="formula-title">核心公式</div>
+                <p>转移轨道半长轴: a = (r₁ + r₂) / 2</p>
+                <p>初始圆轨道速度: v₁ = √(GM/r₁)</p>
+                <p>转移轨道近拱点速度: v<sub>t1</sub> = √(GM(2/r₁ - 1/a))</p>
+                <p>Δv 总需求: |Δv₁| + |Δv₂|</p>
+            </div>
+        </div>
+        
+        <div class="test-suite" id="slingshotSuite">
+            <h2>🌌 引力弹弓测试</h2>
+            <div class="formula-box">
+                <div class="formula-title">核心公式</div>
+                <p>双曲线剩余速度: v<sub>∞</sub> = |v<sub>approach</sub> - v<sub>planet</sub></p>
+                <p>偏转角: δ = 2 arcsin(r<sub>p</sub> / b)</p>
+                <p>最终速度: v<sub>final</sub> = √(v<sub>p</sub>² + v<sub>∞</sub>² + 2v<sub>p</sub>v<sub>∞</sub>cosδ)</p>
+            </div>
+        </div>
+        
+        <div class="test-suite" id="escapeSuite">
+            <h2>💫 逃逸速度测试</h2>
+            <div class="formula-box">
+                <div class="formula-title">核心公式</div>
+                <p>逃逸速度: v<sub>esc</sub> = √(2GM/r)</p>
+                <p>圆轨道速度: v<sub>circ</sub> = √(GM/r)</p>
+                <p>v<sub>esc</sub> = v<sub>circ</sub> × √2</p>
+            </div>
+        </div>
+        
+        <div class="test-suite" id="fuelSuite">
+            <h2>⛽ 燃料消耗测试 (齐奥尔科夫斯基公式)</h2>
+            <div class="formula-box">
+                <div class="formula-title">核心公式</div>
+                <p>齐奥尔科夫斯基火箭方程: Δv = v<sub>e</sub> × ln(m₀/m₁)</p>
+                <p>推进剂质量: m<sub>prop</sub> = m₀ × (1 - 1/e^(Δv/v<sub>e</sub>))</p>
+            </div>
+        </div>
+        
+        <div class="test-suite" id="orbitSuite">
+            <h2>🔄 轨道参数验证测试</h2>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+    <script>
+        let testResults = {
+            total: 0,
+            passed: 0,
+            failed: 0
+        };
+        
+        function assertNear(condition, message) {
+            return condition;
+        }
+        
+        function assertApproximatelyEqual(actual, expected, tolerance, message) {
+            const diff = Math.abs(actual - expected);
+            const relativeDiff = expected !== 0 ? diff / Math.abs(expected) : diff;
+            return relativeDiff <= tolerance;
+        }
+        
+        function createTestCase(suiteId, testName, description, passed, details) {
+            const suite = document.getElementById(suiteId);
+            const testCase = document.createElement('div');
+            testCase.className = `test-case ${passed ? 'passed' : 'failed'}`;
+            
+            testCase.innerHTML = `
+                <div class="test-name">${testName}</div>
+                <div class="test-description">${description}</div>
+                <div class="test-result ${passed ? 'passed' : 'failed'}">
+                    ${passed ? '✅ 通过' : '❌ 失败'}
+                </div>
+                <div class="test-details">
+                    ${details}
+                </div>
+            `;
+            
+            suite.appendChild(testCase);
+            
+            testResults.total++;
+            if (passed) testResults.passed++;
+            else testResults.failed++;
+            
+            updateSummary();
+        }
+        
+        function updateSummary() {
+            document.getElementById('totalTests').textContent = testResults.total;
+            document.getElementById('passedTests').textContent = testResults.passed;
+            document.getElementById('failedTests').textContent = testResults.failed;
+            
+            const progress = testResults.total > 0 
+                ? (testResults.passed / testResults.total * 100) 
+                : 0;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+        
+        function formatNumber(num, decimals = 2) {
+            if (Math.abs(num) >= 1e6 || (Math.abs(num) < 0.01 && num !== 0)) {
+                return num.toExponential(decimals);
+            }
+            return num.toFixed(decimals);
+        }
+        
+        function runHohmannTransferTests() {
+            console.log('运行霍曼转移轨道测试...');
+            const G = 6.67430e-11;
+            const sunMass = 1.989e30;
+            
+            const test1 = Physics.calculateHohmannTransfer(sunMass, planetaryOrbits.Earth.radius, planetaryOrbits.Mars.radius);
+            const expectedDeltaV = test1.totalDeltaV;
+            const earthToMarsExpected = 5800;
+            const passed1 = assertApproximatelyEqual(expectedDeltaV, earthToMarsExpected, 0.15, '地球到火星转移Δv');
+            
+            let details1 = `<pre>🌍 地球到火星霍曼转移轨道计算:</pre>`;
+            details1 += `<pre>  初始轨道半径 (地球): <span class="value">${formatNumber(planetaryOrbits.Earth.radius)}</span> m</pre>`;
+            details1 += `<pre>  目标轨道半径 (火星): <span class="value">${formatNumber(planetaryOrbits.Mars.radius)}</span> m</pre>`;
+            details1 += `<pre>  初始圆轨道速度: <span class="value">${formatNumber(test1.initialOrbitVelocity)}</span> m/s</pre>`;
+            details1 += `<pre>  第一次Δv (进入转移轨道): <span class="value">${formatNumber(test1.deltaV1)}</span> m/s</pre>`;
+            details1 += `<pre>  第二次Δv (进入圆轨道): <span class="value">${formatNumber(test1.deltaV2)}</span> m/s</pre>`;
+            details1 += `<pre>  总Δv需求: <span class="${passed1 ? 'success' : 'actual'}">${formatNumber(expectedDeltaV)}</span> m/s</pre>`;
+            details1 += `<pre>  预期值约: <span class="expected">${earthToMarsExpected}</span> m/s (公差 ±15%</pre>`;
+            details1 += `<pre>  转移时间: <span class="value">${formatNumber(test1.transferTimeDays)}</span> 天</pre>`;
+            
+            createTestCase('hohmannSuite',
+                '测试1: 地球 → 火星霍曼转移',
+                '验证地火转移轨道的Δv计算精度',
+                passed1,
+                details1
+            );
+            
+            const test2 = Physics.calculateHohmannTransfer(sunMass, planetaryOrbits.Earth.radius, planetaryOrbits.Jupiter.radius);
+            const transferTimeYears = test2.transferTimeDays / 365.25;
+            const expectedTimeYears = 2.75;
+            const passed2 = assertApproximatelyEqual(transferTimeYears, expectedTimeYears, 0.1, '木星转移时间');
+            
+            let details2 = `<pre>🌍 地球到木星霍曼转移轨道计算:</pre>`;
+            details2 += `<pre>  初始轨道半径 (地球): <span class="value">${formatNumber(planetaryOrbits.Earth.radius)}</span> m</pre>`;
+            details2 += `<pre>  目标轨道半径 (木星): <span class="value">${formatNumber(planetaryOrbits.Jupiter.radius)}</span> m</pre>`;
+            details2 += `<pre>  总Δv需求: <span class="value">${formatNumber(test2.totalDeltaV)}</span> m/s</pre>`;
+            details2 += `<pre>  转移时间: <span class="${passed2 ? 'success' : 'actual'}">${formatNumber(transferTimeYears)}</span> 年</pre>`;
+            details2 += `<pre>  预期值约: <span class="expected">${expectedTimeYears}</span> 年 (公差 ±10%)</pre>`;
+            
+            createTestCase('hohmannSuite',
+                '测试2: 地球 → 木星霍曼转移时间',
+                '验证外行星转移时间计算精度',
+                passed2,
+                details2
+            );
+            
+            const leoRadius = celestialBodies.Earth.radius + 400000;
+            const geoRadius = celestialBodies.Earth.radius + 35786000;
+            const test3 = Physics.calculateHohmannTransfer(celestialBodies.Earth.mass, leoRadius, geoRadius);
+            const leoToGeoExpected = 3900;
+            const passed3 = assertApproximatelyEqual(test3.totalDeltaV, leoToGeoExpected, 0.1, 'LEO到GEO转移Δv');
+            
+            let details3 = `<pre>🛰️ LEO → GEO 地球轨道转移计算:</pre>`;
+            details3 += `<pre>  LEO轨道半径: <span class="value">${formatNumber(leoRadius)}</span> m</pre>`;
+            details3 += `<pre>  GEO轨道半径: <span class="value">${formatNumber(geoRadius)}</span> m</pre>`;
+            details3 += `<pre>  总Δv需求: <span class="${passed3 ? 'success' : 'actual'}">${formatNumber(test3.totalDeltaV)}</span> m/s</pre>`;
+            details3 += `<pre>  预期值约: <span class="expected">${leoToGeoExpected}</span> m/s (公差 ±10%)</pre>`;
+            details3 += `<pre>  转移时间: <span class="value">${formatNumber(test3.transferTime / 60)}</span> 分钟</pre>`;
+            
+            createTestCase('hohmannSuite',
+                '测试3: LEO → GEO 地球轨道转移',
+                '验证低轨道到地球同步轨道转移',
+                passed3,
+                details3
+            );
+            
+            const test4 = Physics.calculateHohmannTransfer(sunMass, planetaryOrbits.Earth.radius, planetaryOrbits.Earth.radius);
+            const passed4 = assertApproximatelyEqual(test4.totalDeltaV, 0, 0.01, '相同轨道Δv应为0');
+            
+            let details4 = `<pre>🔄 相同轨道转移测试:</pre>`;
+            details4 += `<pre>  初始和目标轨道相同: <span class="value">${formatNumber(planetaryOrbits.Earth.radius)}</span> m</pre>`;
+            details4 += `<pre>  计算总Δv: <span class="${passed4 ? 'success' : 'actual'}">${formatNumber(test4.totalDeltaV)}</span> m/s</pre>`;
+            details4 += `<pre>  预期值: <span class="expected">0</span> m/s</pre>`;
+            
+            createTestCase('hohmannSuite',
+                '测试4: 相同轨道转移 (边界测试)',
+                '验证相同半径轨道Δv为0',
+                passed4,
+                details4
+            );
+        }
+        
+        function runGravitySlingShotTests() {
+            console.log('运行引力弹弓测试...');
+            
+            const jupiterVelocity = 13070;
+            const approachVelocity = 10000;
+            
+            const test1 = Physics.calculateGravitySlingShot(jupiterVelocity, approachVelocity, 1.5 * celestialBodies.Jupiter.radius, celestialBodies.Jupiter.radius);
+            const passed1 = test1.velocityGain > 0;
+            
+            let details1 = `<pre>🪐 木星引力弹弓计算:</pre>`;
+            details1 += `<pre>  木星轨道速度: <span class="value">${formatNumber(jupiterVelocity)}</span> m/s</pre>`;
+            details1 += `<pre>  探测器接近速度: <span class="value">${formatNumber(approachVelocity)}</span> m/s</pre>`;
+            details1 += `<pre>  双曲线剩余速度 v∞: <span class="value">${formatNumber(test1.vInfinity)}</span> m/s</pre>`;
+            details1 += `<pre>  偏转角: <span class="value">${formatNumber(test1.turnAngleDegrees)}</span>°</pre>`;
+            details1 += `<pre>  最终速度: <span class="value">${formatNumber(test1.finalVelocity)}</span> m/s</pre>`;
+            details1 += `<pre>  获得速度增量: <span class="${passed1 ? 'success' : 'actual'}">${formatNumber(test1.velocityGain)}</span> m/s</pre>`;
+            
+            createTestCase('slingshotSuite',
+                '测试1: 木星引力弹弓速度增益',
+                '验证引力弹弓能产生正的速度增量',
+                passed1,
+                details1
+            );
+            
+            const test2a = Physics.calculateGravitySlingShot(jupiterVelocity, approachVelocity, celestialBodies.Jupiter.radius * 1.2, celestialBodies.Jupiter.radius);
+            const test2b = Physics.calculateGravitySlingShot(jupiterVelocity, approachVelocity, celestialBodies.Jupiter.radius * 5, celestialBodies.Jupiter.radius);
+            const passed2 = test2a.velocityGain > test2b.velocityGain;
+            
+            let details2 = `<pre>📏 撞击参数影响分析:</pre>`;
+            details2 += `<pre>  近距离飞越 (1.2×半径): 速度增益 = <span class="value">${formatNumber(test2a.velocityGain)}</span> m/s</pre>`;
+            details2 += `<pre>  远距离飞越 (5×半径): 速度增益 = <span class="value">${formatNumber(test2b.velocityGain)}</span> m/s</pre>`;
+            details2 += `<pre>  结论: <span class="${passed2 ? 'success' : 'actual'}">近距离飞越获得更大的速度增量</span></pre>`;
+            
+            createTestCase('slingshotSuite',
+                '测试2: 撞击参数影响验证',
+                '验证近距离飞越应获得更大速度增量',
+                passed2,
+                details2
+            );
+            
+            const saturnVelocity = 9640;
+            const test3 = Physics.calculateGravitySlingShot(saturnVelocity, 12000, celestialBodies.Saturn.radius * 1.5, celestialBodies.Saturn.radius);
+            const passed3 = test3.turnAngleDegrees > 0 && test3.turnAngleDegrees < 180;
+            
+            let details3 = `<pre>🪐 土星星引力弹弓:</pre>`;
+            details3 += `<pre>  土星轨道速度: <span class="value">${formatNumber(saturnVelocity)}</span> m/s</pre>`;
+            details3 += `<pre>  接近速度: <span class="value">12000</span> m/s</pre>`;
+            details3 += `<pre>  偏转角: <span class="${passed3 ? 'success' : 'actual'}">${formatNumber(test3.turnAngleDegrees)}</span>°</pre>`;
+            details3 += `<pre>  有效范围: <span class="expected">0° < δ < 180°</span></pre>`;
+            details3 += `<pre>  速度增量: <span class="value">${formatNumber(test3.velocityGain)}</span> m/s</pre>`;
+            
+            createTestCase('slingshotSuite',
+                '测试3: 土星引力弹弓偏转角',
+                '验证偏转角在有效范围内 (0°-180°)',
+                passed3,
+                details3
+            );
+            
+            const headOn = Physics.calculateGravitySlingShot(jupiterVelocity, -approachVelocity, celestialBodies.Jupiter.radius * 2, celestialBodies.Jupiter.radius);
+            const tailOn = Physics.calculateGravitySlingShot(jupiterVelocity, approachVelocity, celestialBodies.Jupiter.radius * 2, celestialBodies.Jupiter.radius);
+            const passed4 = Math.abs(headOn.velocityGain) > Math.abs(tailOn.velocityGain);
+            
+            let details4 = `<pre>↔️ 接近方向对比:</pre>`;
+            details4 += `<pre>  逆行接近 (迎面): 速度增益 = <span class="value">${formatNumber(headOn.velocityGain)}</span> m/s</pre>`;
+            details4 += `<pre>  顺行接近 (同向): 速度增益 = <span class="value">${formatNumber(tailOn.velocityGain)}</span> m/s</pre>`;
+            details4 += `<pre>  结论: <span class="${passed4 ? 'success' : 'actual'}">逆行飞越获得更大速度增量</span></pre>`;
+            
+            createTestCase('slingshotSuite',
+                '测试4: 接近方向影响',
+                '验证逆行飞越获得更大速度增量',
+                passed4,
+                details4
+            );
+        }
+        
+        function runEscapeVelocityTests() {
+            console.log('运行逃逸速度测试...');
+            
+            const earthEscape = Physics.calculateEscapeVelocity(celestialBodies.Earth.mass, celestialBodies.Earth.radius);
+            const expectedEarthEscape = 11186;
+            const passed1 = assertApproximatelyEqual(earthEscape, expectedEarthEscape, 0.02, '地球表面逃逸速度');
+            
+            let details1 = `<pre>🌍 地球表面逃逸速度计算:</pre>`;
+            details1 += `<pre>  地球质量: <span class="value">${formatNumber(celestialBodies.Earth.mass)}</span> kg</pre>`;
+            details1 += `<pre>  地球半径: <span class="value">${formatNumber(celestialBodies.Earth.radius)}</span> m</pre>`;
+            details1 += `<pre>  计算逃逸速度: <span class="${passed1 ? 'success' : 'actual'}">${formatNumber(earthEscape)}</span> m/s</pre>`;
+            details1 += `<pre>  实际值: <span class="expected">${expectedEarthEscape}</span> m/s (公差 ±2%)</pre>`;
+            
+            createTestCase('escapeSuite',
+                '测试1: 地球表面逃逸速度',
+                '验证地球逃逸速度计算精度',
+                passed1,
+                details1
+            );
+            
+            const moonEscape = Physics.calculateEscapeVelocity(celestialBodies.Moon.mass, celestialBodies.Moon.radius);
+            const expectedMoonEscape = 2380;
+            const passed2 = assertApproximatelyEqual(moonEscape, expectedMoonEscape, 0.03, '月球表面逃逸速度');
+            
+            let details2 = `<pre>🌙 月球表面逃逸速度计算:</pre>`;
+            details2 += `<pre>  月球质量: <span class="value">${formatNumber(celestialBodies.Moon.mass)}</span> kg</pre>`;
+            details2 += `<pre>  月球半径: <span class="value">${formatNumber(celestialBodies.Moon.radius)}</span> m</pre>`;
+            details2 += `<pre>  计算逃逸速度: <span class="${passed2 ? 'success' : 'actual'}">${formatNumber(moonEscape)}</span> m/s</pre>`;
+            details2 += `<pre>  实际值: <span class="expected">${expectedMoonEscape}</span> m/s (公差 ±3%)</pre>`;
+            
+            createTestCase('escapeSuite',
+                '测试2: 月球表面逃逸速度',
+                '验证月球逃逸速度计算精度',
+                passed2,
+                details2
+            );
+            
+            const sunEscape = Physics.calculateEscapeVelocity(celestialBodies.Sun.mass, celestialBodies.Sun.radius);
+            const jupiterEscape = Physics.calculateEscapeVelocity(celestialBodies.Jupiter.mass, celestialBodies.Jupiter.radius);
+            const marsEscape = Physics.calculateEscapeVelocity(celestialBodies.Mars.mass, celestialBodies.Mars.radius);
+            
+            const passed3 = (sunEscape > jupiterEscape) && (jupiterEscape > earthEscape) && (earthEscape > marsEscape) && (marsEscape > moonEscape);
+            
+            let details3 = `<pre>🌟 各天体逃逸速度排序:</pre>`;
+            details3 += `<pre>  太阳: <span class="value">${formatNumber(sunEscape/1000)}</span> km/s</pre>`;
+            details3 += `<pre>  木星: <span class="value">${formatNumber(jupiterEscape/1000)}</span> km/s</pre>`;
+            details3 += `<pre>  地球: <span class="value">${formatNumber(earthEscape/1000)}</span> km/s</pre>`;
+            details3 += `<pre>  火星: <span class="value">${formatNumber(marsEscape/1000)}</span> km/s</pre>`;
+            details3 += `<pre>  月球: <span class="value">${formatNumber(moonEscape/1000)}</span> km/s</pre>`;
+            details3 += `<pre>  排序正确性: <span class="${passed3 ? 'success ✓' : 'actual ✗'}">太阳 > 木星 > 地球 > 火星 > 月球</span></pre>`;
+            
+            createTestCase('escapeSuite',
+                '测试3: 各天体逃逸速度排序',
+                '验证逃逸速度与质量半径关系正确',
+                passed3,
+                details3
+            );
+            
+            const leoRadius = celestialBodies.Earth.radius + 400000;
+            const leoOrbital = Physics.calculateOrbitalVelocity(celestialBodies.Earth.mass, leoRadius);
+            const leoEscape = Physics.calculateEscapeVelocity(celestialBodies.Earth.mass, leoRadius);
+            const ratio = leoEscape / leoOrbital;
+            const expectedRatio = Math.sqrt(2);
+            const passed4 = assertApproximatelyEqual(ratio, expectedRatio, 0.001, '逃逸速度与圆轨道速度比值应为√2');
+            
+            let details4 = `<pre>🔬 LEO轨道逃逸速度与圆轨道速度比值:</pre>`;
+            details4 += `<pre>  LEO轨道高度: 400 km</pre>`;
+            details4 += `<pre>  圆轨道速度: <span class="value">${formatNumber(leoOrbital)}</span> m/s</pre>`;
+            details4 += `<pre>  逃逸速度: <span class="value">${formatNumber(leoEscape)}</span> m/s</pre>`;
+            details4 += `<pre>  计算比值: <span class="${passed4 ? 'success' : 'actual'}">${formatNumber(ratio, 6)}</span></pre>`;
+            details4 += `<pre>  理论值 (√2): <span class="expected">${formatNumber(expectedRatio, 6)}</span></pre>`;
+            
+            createTestCase('escapeSuite',
+                '测试4: 逃逸速度与圆轨道速度比值',
+                '验证 v_esc = v_circ × √2 关系',
+                passed4,
+                details4
+            );
+        }
+        
+        function runFuelConsumptionTests() {
+            console.log('运行燃料消耗测试...');
+            
+            const initialMass = 100000;
+            const exhaustVelocity = 4500;
+            
+            const leoDeltaV = 9500;
+            const test1 = Physics.calculateFuelConsumption(initialMass, leoDeltaV, exhaustVelocity);
+            const expectedPropellant1 = 88000;
+            const passed1 = assertApproximatelyEqual(test1.propellantMass, expectedPropellant1, 0.1, 'LEO入轨推进剂质量');
+            
+            let details1 = `<pre>🚀 LEO入轨燃料计算 (Δv = 9.5 km/s):</pre>`;
+            details1 += `<pre>  初始总质量: <span class="value">${formatNumber(initialMass)}</span> kg</pre>`;
+            details1 += `<pre>  排气速度: <span class="value">${formatNumber(exhaustVelocity)}</span> m/s</pre>`;
+            details1 += `<pre>  Δv需求: <span class="value">${formatNumber(leoDeltaV)}</span> m/s</pre>`;
+            details1 += `<pre>  质量比: <span class="value">${formatNumber(test1.massRatio, 3)}</span></pre>`;
+            details1 += `<pre>  推进剂质量: <span class="${passed1 ? 'success' : 'actual'}">${formatNumber(test1.propellantMass)}</span> kg</pre>`;
+            details1 += `<pre>  预期值约: <span class="expected">${expectedPropellant1}</span> kg (公差 ±10%)</pre>`;
+            details1 += `<pre>  最终质量: <span class="value">${formatNumber(test1.finalMass)}</span> kg</pre>`;
+            
+            createTestCase('fuelSuite',
+                '测试1: LEO入轨燃料计算',
+                '验证齐奥尔科夫斯基公式计算精度',
+                passed1,
+                details1
+            );
+            
+            const marsMissionDeltaV = 15000;
+            const test2 = Physics.calculateFuelConsumption(initialMass, marsMissionDeltaV, exhaustVelocity);
+            const massRatio5 = test2.massRatio;
+            const passed2 = massRatio5 > 25;
+            
+            let details2 = `<pre>🔴 火星任务燃料计算 (Δv = 15 km/s):</pre>`;
+            details2 += `<pre>  初始总质量: <span class="value">${formatNumber(initialMass)}</span> kg</pre>`;
+            details2 += `<pre>  Δv需求: <span class="value">${formatNumber(marsMissionDeltaV)}</span> m/s</pre>`;
+            details2 += `<pre>  质量比: <span class="${passed2 ? 'success' : 'actual'}">${formatNumber(massRatio5, 2)}</span></pre>`;
+            details2 += `<pre>  推进剂质量: <span class="value">${formatNumber(test2.propellantMass)}</span> kg</pre>`;
+            details2 += `<pre>  最终质量: <span class="value">${formatNumber(test2.finalMass)}</span> kg</pre>`;
+            details2 += `<pre>  推进剂占比: <span class="value">${formatNumber(test2.propellantMass / initialMass * 100, 1)}</span>%</pre>`;
+            
+            createTestCase('fuelSuite',
+                '测试2: 火星任务燃料计算',
+                '验证大Δv任务质量比合理性',
+                passed2,
+                details2
+            );
+            
+            const ionExhaustVelocity = 50000;
+            const test3a = Physics.calculateFuelConsumption(initialMass, leoDeltaV, ionExhaustVelocity);
+            const test3b = Physics.calculateFuelConsumption(initialMass, leoDeltaV, exhaustVelocity);
+            const passed3 = test3a.propellantMass < test3b.propellantMass;
+            
+            let details3 = `<pre>⚡ 化学推进 vs 离子推进对比:</pre>`;
+            details3 += `<pre>  化学推进 (v_e = 4.5 km/s):</pre>`;
+            details3 += `<pre>    推进剂质量: <span class="value">${formatNumber(test3b.propellantMass)}</span> kg</pre>`;
+            details3 += `<pre>  离子推进 (v_e = 50 km/s):</pre>`;
+            details3 += `<pre>    推进剂质量: <span class="${passed3 ? 'success' : 'actual'}">${formatNumber(test3a.propellantMass)}</span> kg</pre>`;
+            details3 += `<pre>  结论: <span class="${passed3 ? 'success ✓' : 'actual ✗'}">高排气速度显著降低燃料需求</span></pre>`;
+            
+            createTestCase('fuelSuite',
+                '测试3: 排气速度影响验证',
+                '验证高排气速度减少燃料需求',
+                passed3,
+                details3
+            );
+            
+            const test4 = Physics.calculateFuelConsumption(initialMass, 0, exhaustVelocity);
+            const passed4 = test4.propellantMass === 0 && test4.massRatio === 1;
+            
+            let details4 = `<pre>🔍 零Δv边界测试:</pre>`;
+            details4 += `<pre>  Δv = 0 m/s</pre>`;
+            details4 += `<pre>  推进剂质量: <span class="${passed4 ? 'success' : 'actual'}">${formatNumber(test4.propellantMass)}</span> kg</pre>`;
+            details4 += `<pre>  质量比: <span class="${passed4 ? 'success' : 'actual'}">${formatNumber(test4.massRatio)}</span></pre>`;
+            details4 += `<pre>  预期: 推进剂=0, 质量比=1</pre>`;
+            
+            createTestCase('fuelSuite',
+                '测试4: 零Δv边界测试',
+                '验证Δv=0时无燃料消耗',
+                passed4,
+                details4
+            );
+            
+            const maneuvers = [
+                { name: 'LEO入轨', deltaV: 9500 },
+                { name: 'TLI', deltaV: 3150 },
+                { name: 'LOI', deltaV: 800 },
+                { name: '着陆', deltaV: 2000 }
+            ];
+            const totalDeltaV = Physics.calculateMissionDeltaV(maneuvers);
+            const test5 = Physics.calculateFuelConsumption(initialMass, totalDeltaV, exhaustVelocity);
+            const expectedTotal = 15450;
+            const passed5 = assertApproximatelyEqual(totalDeltaV, expectedTotal, 0.02, '任务总Δv计算');
+            
+            let details5 = `<pre>🌙 阿波罗登月任务Δv汇总:</pre>`;
+            maneuvers.forEach(m => {
+                details5 += `<pre>  ${m.name}: <span class="value">${formatNumber(m.deltaV)}</span> m/s</pre>`;
+            });
+            details5 += `<pre>  总Δv: <span class="${passed5 ? 'success' : 'actual'}">${formatNumber(totalDeltaV)}</span> m/s</pre>`;
+            details5 += `<pre>  预期值: <span class="expected">${expectedTotal}</span> m/s</pre>`;
+            details5 += `<pre>  总推进剂需求: <span class="value">${formatNumber(test5.propellantMass)}</span> kg</pre>`;
+            
+            createTestCase('fuelSuite',
+                '测试5: 阿波罗登月任务Δv汇总',
+                '验证多阶段任务Δv累加计算',
+                passed5,
+                details5
+            );
+        }
+        
+        function runOrbitParameterTests() {
+            console.log('运行轨道参数验证测试...');
+            
+            const leoRadius = celestialBodies.Earth.radius + 400000;
+            const leoVelocity = Physics.calculateOrbitalVelocity(celestialBodies.Earth.mass, leoRadius);
+            
+            const test1 = Physics.checkOrbitalParameters(celestialBodies.Earth.mass, leoRadius, leoVelocity);
+            const passed1 = test1.isCircular && test1.isClosedOrbit;
+            
+            let details1 = `<pre>🛰️ LEO圆轨道参数验证:</pre>`;
+            details1 += `<pre>  轨道半径: <span class="value">${formatNumber(leoRadius)}</span> m</pre>`;
+            details1 += `<pre>  圆轨道速度: <span class="value">${formatNumber(leoVelocity)}</span> m/s</pre>`;
+            details1 += `<pre>  比机械能: <span class="value">${formatNumber(test1.specificEnergy)}</span> J/kg</pre>`;
+            details1 += `<pre>  偏心率: <span class="${passed1 ? 'success' : 'actual'}">${formatNumber(test1.eccentricity, 6)}</span></pre>`;
+            details1 += `<pre>  是闭合轨道: <span class="${test1.isClosedOrbit ? 'success ✓' : 'actual ✗'}">${test1.isClosedOrbit}</span></pre>`;
+            details1 += `<pre>  是圆轨道: <span class="${test1.isCircular ? 'success ✓' : 'actual ✗'}">${test1.isCircular}</span></pre>`;
+            
+            createTestCase('orbitSuite',
+                '测试1: LEO圆轨道参数',
+                '验证圆轨道的比机械能和偏心率',
+                passed1,
+                details1
+            );
+            
+            const escapeVelocity = Physics.calculateEscapeVelocity(celestialBodies.Earth.mass, leoRadius);
+            const test2 = Physics.checkOrbitalParameters(celestialBodies.Earth.mass, leoRadius, escapeVelocity * 1.1);
+            const passed2 = !test2.isClosedOrbit && test2.specificEnergy > 0;
+            
+            let details2 = `<pre>🚀 超逃逸速度轨道验证:</pre>`;
+            details2 += `<pre>  速度 (1.1 × v_esc): <span class="value">${formatNumber(escapeVelocity * 1.1)}</span> m/s</pre>`;
+            details2 += `<pre>  比机械能: <span class="${passed2 ? 'success' : 'actual'}">${formatNumber(test2.specificEnergy)}</span> J/kg</pre>`;
+            details2 += `<pre>  是闭合轨道: <span class="${!test2.isClosedOrbit ? 'success ✓' : 'actual ✗'}">${test2.isClosedOrbit}</span></pre>`;
+            details2 += `<pre>  结论: <span class="${test2.specificEnergy > 0 ? 'success ✓' : 'actual ✗'}">正的比机械能表示双曲线逃逸轨道</span></pre>`;
+            
+            createTestCase('orbitSuite',
+                '测试2: 超逃逸速度轨道 (双曲线)',
+                '验证正比机械能对应逃逸轨道',
+                passed2,
+                details2
+            );
+            
+            const ellipticalVelocity = leoVelocity * 1.3;
+            const test3 = Physics.checkOrbitalParameters(celestialBodies.Earth.mass, leoRadius, ellipticalVelocity);
+            const passed3 = test3.isClosedOrbit && test3.eccentricity > 0 && test3.eccentricity < 1;
+            
+            let details3 = `<pre>🔵 椭圆轨道参数验证:</pre>`;
+            details3 += `<pre>  速度 (1.3 × v_circ): <span class="value">${formatNumber(ellipticalVelocity)}</span> m/s</pre>`;
+            details3 += `<pre>  比机械能: <span class="value">${formatNumber(test3.specificEnergy)}</span> J/kg</pre>`;
+            details3 += `<pre>  偏心率: <span class="${passed3 ? 'success' : 'actual'}">${formatNumber(test3.eccentricity, 4)}</span></pre>`;
+            details3 += `<pre>  是闭合轨道: <span class="${test3.isClosedOrbit ? 'success ✓' : 'actual ✗'}">${test3.isClosedOrbit}</span></pre>`;
+            
+            createTestCase('orbitSuite',
+                '测试3: 椭圆轨道参数',
+                '验证椭圆轨道偏心率在0-1之间',
+                passed3,
+                details3
+            );
+            
+            const moonOrbitRadius = 384400000;
+            const moonOrbitalVelocity = Physics.calculateOrbitalVelocity(celestialBodies.Earth.mass, moonOrbitRadius);
+            const expectedMoonVelocity = 1022;
+            const passed4 = assertApproximatelyEqual(moonOrbitalVelocity, expectedMoonVelocity, 0.02, '月球轨道速度');
+            
+            let details4 = `<pre>🌙 月球轨道速度验证:</pre>`;
+            details4 += `<pre>  月球轨道半径: <span class="value">${formatNumber(moonOrbitRadius)}</span> m</pre>`;
+            details4 += `<pre>  计算轨道速度: <span class="${passed4 ? 'success' : 'actual'}">${formatNumber(moonOrbitalVelocity)}</span> m/s</pre>`;
+            details4 += `<pre>  实际值: <span class="expected">${expectedMoonVelocity}</span> m/s (公差 ±2%)</pre>`;
+            
+            createTestCase('orbitSuite',
+                '测试4: 月球轨道速度验证',
+                '验证月球绕地球轨道速度',
+                passed4,
+                details4
+            );
+        }
+        
+        function runAllTests() {
+            console.log('开始运行所有测试...');
+            resetTests();
+            
+            setTimeout(() => runHohmannTransferTests(), 10);
+            setTimeout(() => runGravitySlingShotTests(), 50);
+            setTimeout(() => runEscapeVelocityTests(), 100);
+            setTimeout(() => runFuelConsumptionTests(), 150);
+            setTimeout(() => runOrbitParameterTests(), 200);
+            
+            setTimeout(() => {
+                console.log(`测试完成: ${testResults.passed}/${testResults.total} 通过`);
+            }, 300);
+        }
+        
+        function resetTests() {
+            testResults = { total: 0, passed: 0, failed: 0 };
+            
+            document.querySelectorAll('.test-case').forEach(el => el.remove());
+            
+            updateSummary();
+        }
+        
+        window.onload = function() {
+            console.log('测试系统已加载，点击"运行所有测试"开始验证');
+        };
+    </script>
+</body>
+</html>

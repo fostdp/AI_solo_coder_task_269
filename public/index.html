@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>太阳系探索者 - 高级版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: #000011;
+        }
+        
+        .ui-panel {
+            position: absolute;
+            background: rgba(0, 20, 40, 0.85);
+            border: 1px solid #00ffff;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+        
+        #statusPanel {
+            top: 10px;
+            left: 10px;
+            width: 240px;
+        }
+        
+        #controlPanel {
+            bottom: 10px;
+            left: 10px;
+            width: 220px;
+        }
+        
+        #scorePanel {
+            top: 10px;
+            right: 10px;
+            width: 220px;
+        }
+        
+        #featurePanel {
+            top: 250px;
+            left: 10px;
+            width: 240px;
+        }
+        
+        #missionPanel {
+            bottom: 10px;
+            right: 10px;
+            width: 280px;
+        }
+        
+        .panel-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #00ffff;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .status-item {
+            margin: 8px 0;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .status-label {
+            color: #aaa;
+        }
+        
+        .status-value {
+            color: #fff;
+            font-weight: bold;
+        }
+        
+        .fuel-bar {
+            width: 100%;
+            height: 12px;
+            background: #333;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        
+        .fuel-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4444, #ffaa00, #44ff44);
+            transition: width 0.3s;
+        }
+        
+        .control-btn {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            background: linear-gradient(180deg, #1a4a6e, #0d2840);
+            border: 1px solid #00ffff;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        
+        .control-btn:hover {
+            background: linear-gradient(180deg, #2a6a9e, #1d4860);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        
+        .control-btn.active {
+            background: linear-gradient(180deg, #00ff88, #00aa55);
+            border-color: #00ff88;
+        }
+        
+        .planet-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        
+        .planet-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .visited {
+            opacity: 0.4;
+            text-decoration: line-through;
+        }
+        
+        .landed {
+            color: #00ff88;
+        }
+        
+        .collected {
+            color: #ffaa00;
+        }
+        
+        #instructions {
+            position: absolute;
+            bottom: 10px;
+            right: 290px;
+            font-size: 11px;
+            color: #888;
+            text-align: right;
+        }
+        
+        #gameOver {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 100;
+            min-width: 300px;
+        }
+        
+        #gameOver h2 {
+            color: #00ffff;
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+        
+        #gameOver input {
+            padding: 10px;
+            margin: 10px 0;
+            width: 200px;
+            background: rgba(0, 40, 80, 0.8);
+            border: 1px solid #00ffff;
+            color: #fff;
+            border-radius: 4px;
+        }
+        
+        .key-hint {
+            color: #00ffff;
+            font-weight: bold;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 20px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #00ffff;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+        
+        .feature-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 12px;
+        }
+        
+        .mission-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(0, 50, 100, 0.5);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            border: 1px solid transparent;
+        }
+        
+        .mission-item:hover {
+            border-color: #00ffff;
+        }
+        
+        .mission-item.active {
+            border-color: #00ff88;
+            background: rgba(0, 100, 50, 0.5);
+        }
+        
+        .mission-name {
+            font-weight: bold;
+            color: #00ffff;
+        }
+        
+        .mission-desc {
+            color: #aaa;
+            margin-top: 3px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ffff, #00ff88);
+            transition: width 0.3s;
+        }
+        
+        .minigame-overlay {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 20, 40, 0.95);
+            border: 2px solid #00ffff;
+            border-radius: 12px;
+            padding: 25px;
+            z-index: 200;
+            text-align: center;
+            min-width: 350px;
+        }
+        
+        .minigame-title {
+            color: #00ffff;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        
+        .landing-zone {
+            width: 300px;
+            height: 200px;
+            background: linear-gradient(180deg, #1a1a2e, #16213e);
+            border: 2px solid #444;
+            border-radius: 8px;
+            position: relative;
+            margin: 15px auto;
+            overflow: hidden;
+        }
+        
+        .landing-pad {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 10px;
+            background: linear-gradient(90deg, #00ff88, #00ffff);
+            border-radius: 2px;
+        }
+        
+        .landing-ship {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            transition: all 0.1s;
+        }
+        
+        .sample-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin: 15px 0;
+        }
+        
+        .sample-cell {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            border: 2px solid #444;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .sample-cell:hover {
+            border-color: #00ffff;
+        }
+        
+        .sample-cell.found {
+            background: #004422;
+            border-color: #00ff88;
+        }
+        
+        .sample-cell.empty {
+            background: #442200;
+            border-color: #ff6600;
+        }
+        
+        .relativity-warning {
+            color: #ff6600;
+            font-size: 11px;
+            margin-top: 5px;
+            padding: 5px;
+            background: rgba(255, 102, 0, 0.2);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="statusPanel" class="ui-panel">
+        <div class="panel-title">🚀 飞船状态</div>
+        <div class="status-item">
+            <span class="status-label">速度:</span>
+            <span class="status-value" id="velocity">0 km/s</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">光速百分比:</span>
+            <span class="status-value" id="lightSpeedPercent">0%</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">燃料:</span>
+        </div>
+        <div class="fuel-bar">
+            <div class="fuel-fill" id="fuelBar" style="width: 100%"></div>
+        </div>
+        <div class="status-item">
+            <span class="status-label">燃料剩余:</span>
+            <span class="status-value" id="fuelValue">100%</span>
+        </div>
+        <div id="relativityDisplay" style="display: none; margin-top: 10px;">
+            <div class="panel-title" style="font-size: 11px;">⚛️ 相对论效应</div>
+            <div class="status-item">
+                <span class="status-label">时间膨胀:</span>
+                <span class="status-value" id="timeDilation">1.00x</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">长度收缩:</span>
+                <span class="status-value" id="lengthContraction">100%</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">地球时间:</span>
+                <span class="status-value" id="earthTime">0.00s</span>
+            </div>
+            <div class="relativity-warning" id="relativityWarning">
+                ⚠️ 高速飞行时时间会变慢！
+            </div>
+        </div>
+    </div>
+    
+    <div id="featurePanel" class="ui-panel">
+        <div class="panel-title">⚙️ 高级功能</div>
+        <div class="feature-row">
+            <span>相对论效应</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="relativityToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="feature-row">
+            <span>轨道预测</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="orbitPredictToggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="feature-row">
+            <span>轨迹显示</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="trailToggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+        <button class="control-btn" id="landBtn">🛬 尝试着陆 (L)</button>
+        <button class="control-btn" id="sampleBtn" style="display: none;">📦 收集样本 (E)</button>
+    </div>
+    
+    <div id="controlPanel" class="ui-panel">
+        <div class="panel-title">🎮 控制</div>
+        <button class="control-btn" id="thrustBtn">🔥 加速推进 (W)</button>
+        <button class="control-btn" id="retroBtn">🔄 减速推进 (S)</button>
+        <button class="control-btn" id="leftBtn">⬅️ 左转 (A)</button>
+        <button class="control-btn" id="rightBtn">➡️ 右转 (D)</button>
+        <button class="control-btn" id="resetBtn">🔄 重新开始 (R)</button>
+    </div>
+    
+    <div id="scorePanel" class="ui-panel">
+        <div class="panel-title">🏆 得分 & 进度</div>
+        <div class="status-item">
+            <span class="status-label">总分:</span>
+            <span class="status-value" id="totalScore">0</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">已访问行星:</span>
+            <span class="status-value" id="planetsVisited">0/8</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">已着陆行星:</span>
+            <span class="status-value" id="planetsLanded">0/8</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">已收集样本:</span>
+            <span class="status-value" id="samplesCollected">0/24</span>
+        </div>
+        <div style="margin-top: 15px;">
+            <div class="panel-title" style="font-size: 12px;">行星列表</div>
+            <div id="planetList"></div>
+        </div>
+    </div>
+    
+    <div id="missionPanel" class="ui-panel">
+        <div class="panel-title">🛰️ NASA 任务模拟</div>
+        <div class="mission-item" id="mission1" onclick="selectMission('voyager1')">
+            <div class="mission-name">🚀 旅行者1号</div>
+            <div class="mission-desc">木星+土星引力弹弓，飞出太阳系</div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+        </div>
+        <div class="mission-item" id="mission2" onclick="selectMission('newhorizons')">
+            <div class="mission-name">🔭 新视野号</div>
+            <div class="mission-desc">冥王星飞越，柯伊伯带探测</div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+        </div>
+        <div class="mission-item" id="mission3" onclick="selectMission('cassini')">
+            <div class="mission-name">🪐 卡西尼号</div>
+            <div class="mission-desc">土星轨道器，惠更斯着陆土卫六</div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+        </div>
+        <div class="mission-item" id="mission4" onclick="selectMission('perseverance')">
+            <div class="mission-name">🔴 毅力号</div>
+            <div class="mission-desc">火星2020，样本收集任务</div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+        </div>
+    </div>
+    
+    <div id="instructions">
+        <span class="key-hint">W/S</span> 推进/减速 | 
+        <span class="key-hint">A/D</span> 转向 | 
+        <span class="key-hint">L</span> 着陆 | 
+        <span class="key-hint">E</span> 收集样本 |
+        <span class="key-hint">R</span> 重置 |
+        <span class="key-hint">空格</span> 暂停
+    </div>
+    
+    <div id="gameOver" class="ui-panel">
+        <h2>🎉 任务完成!</h2>
+        <div id="finalStats"></div>
+        <input type="text" id="playerName" placeholder="输入你的名字" maxlength="20">
+        <button class="control-btn" id="submitScore">提交分数</button>
+        <button class="control-btn" id="playAgain">再玩一次</button>
+    </div>
+    
+    <div id="landingGame" class="minigame-overlay">
+        <div class="minigame-title">🛬 着陆挑战</div>
+        <div id="landingPlanet" style="color: #00ffff; margin-bottom: 10px;"></div>
+        <div class="status-item" style="justify-content: center; gap: 20px;">
+            <span>垂直速度: <span id="landingVSpeed" style="color: #00ff88;">0</span> m/s</span>
+            <span>水平速度: <span id="landingHSpeed" style="color: #00ff88;">0</span> m/s</span>
+        </div>
+        <div class="status-item" style="justify-content: center;">
+            <span>高度: <span id="landingAltitude" style="color: #ffaa00;">1000</span> m</span>
+        </div>
+        <div class="landing-zone" id="landingZone">
+            <div class="landing-pad"></div>
+            <div class="landing-ship" id="landingShip">🚀</div>
+        </div>
+        <div style="font-size: 12px; color: #aaa; margin: 10px 0;">
+            使用 <span class="key-hint">W</span> 反推减速 | <span class="key-hint">A/D</span> 水平移动
+        </div>
+        <button class="control-btn" id="abortLanding" style="width: 150px; margin: 0 auto;">❌ 中止着陆</button>
+    </div>
+    
+    <div id="sampleGame" class="minigame-overlay">
+        <div class="minigame-title">📦 样本收集</div>
+        <div id="samplePlanet" style="color: #00ffff; margin-bottom: 10px;"></div>
+        <div class="status-item" style="justify-content: center; gap: 20px;">
+            <span>剩余钻探次数: <span id="drillCount" style="color: #ffaa00;">5</span></span>
+            <span>已发现样本: <span id="samplesFound" style="color: #00ff88;">0</span>/3</span>
+        </div>
+        <div class="sample-grid" id="sampleGrid"></div>
+        <div style="font-size: 12px; color: #aaa; margin: 10px 0;">
+            点击网格进行钻探，找到隐藏的样本！
+        </div>
+        <button class="control-btn" id="finishSampling" style="width: 150px; margin: 0 auto;">✅ 完成收集</button>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
